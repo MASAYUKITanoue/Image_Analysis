@@ -100,6 +100,13 @@ for k in range(2,26):
     # メディアンフィルタ適用（）
     img_ave = cv2.medianBlur(img_ave, ksize=3) 
 
+    # Hough変換で円検出(param1:大きいほど検出しやすい,param2:小さいほど検出しやすい)
+    circles = cv2.HoughCircles(
+        img_ave, 
+        cv2.HOUGH_GRADIENT, dp=1.0, minDist=10,
+        param1=150, param2=10, minRadius=20, maxRadius=25
+    )
+
     #閾値sを基準に2値化
     for i in range(2048):
         for j in range(2048):
@@ -115,13 +122,6 @@ for k in range(2,26):
     img_ave=cv2.imread(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
     img_ave2=cv2.imread(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
 
-    # Hough変換で円検出(param1:大きいほど検出しやすい,param2:小さいほど検出しやすい)
-    circles = cv2.HoughCircles(
-        img_ave, 
-        cv2.HOUGH_GRADIENT, dp=1.0, minDist=10,
-        param1=150, param2=10, minRadius=20, maxRadius=25
-    )
-
     # 円の中心座標を取得
     x = circles[0, :, 0]
     y = circles[0, :, 1]
@@ -134,6 +134,15 @@ for k in range(2,26):
             radius = i[2]
             cv2.circle(img_ave, center, radius, 0, 2)
             cv2.circle(img_ave, center, 2, 0, 3)
+
+    cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/add_circle{k}.tiff", img_ave)
+
+    # 円を描画
+    if circles is not None:
+        circles = np.uint16(np.around(circles))
+        for i in circles[0, :]:
+            center = (i[0], i[1])
+            radius = i[2]
             cv2.circle(img_ave,center,radius,0,thickness=-1)
 
     cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/add_circle{k}.tiff", img_ave)
@@ -169,6 +178,9 @@ for k in range(2,26):
                 if connected==True:  
                     img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=0
                     black+=47^2
+                else:
+                    img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
+                    white+=47^2
             else:
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
                 white+=47^2
@@ -194,8 +206,11 @@ for k in range(2,26):
             if (true==1).all():
                 connected=is_connected_black_path_right(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
                 if connected==True:  
-                    img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=0
+                    img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=0
                     black+=47^2
+                else:
+                    img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
+                    white+=47^2
             else:
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
                 white+=47^2

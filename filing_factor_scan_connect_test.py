@@ -82,7 +82,7 @@ s=150    #2値化閾値（ピラー円と粒子の輝度値のみが0になる�
 t=range(2,26) #画像撮影時間
 e=np.zeros(n)  #充填率格納箱
 
-img=tiff.imread(f"F:/experiment/2025_06_21_grid_particle/2.tiff")
+img=tiff.imread(f"F:/experiment/2025_08_02_grid_particle/after.tiff")
 
 #連続画像の平均を取り，流動粒子を排除
 img_ave=np.zeros((2048,2048))
@@ -94,10 +94,17 @@ if img_ave.dtype != np.uint8:
     img_ave = (255 * (img_ave / np.max(img_ave))).astype(np.uint8)
 
 #流動粒子排除画像の保存
-cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/ave2.tiff",img_ave)
+cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/ave.tiff",img_ave)
 
 # メディアンフィルタ適用（）
 img_ave = cv2.medianBlur(img_ave, ksize=3) 
+
+# Hough変換で円検出(param1:大きいほど検出しやすい,param2:小さいほど検出しやすい)
+circles = cv2.HoughCircles(
+    img_ave, 
+    cv2.HOUGH_GRADIENT, dp=1.0, minDist=10,
+    param1=150, param2=20, minRadius=20, maxRadius=25
+)
 
 #閾値sを基準に2値化
 for i in range(2048):
@@ -108,18 +115,11 @@ for i in range(2048):
             img_ave[i,j]=255
 
 #2値化後の画像の保存
-cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/two_value2.tiff",img_ave)
+cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/two_value.tiff",img_ave)
 
 #2値化後の画像をグレースケールで読み込み
-img_ave=cv2.imread(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/two_value2.tiff",cv2.IMREAD_GRAYSCALE) #判定用
-img_ave2=cv2.imread(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/two_value2.tiff",cv2.IMREAD_GRAYSCALE)    #出力用
-
-# Hough変換で円検出(param1:大きいほど検出しやすい,param2:小さいほど検出しやすい)
-circles = cv2.HoughCircles(
-    img_ave, 
-    cv2.HOUGH_GRADIENT, dp=1.0, minDist=10,
-    param1=150, param2=10, minRadius=20, maxRadius=25
-)
+img_ave=cv2.imread(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/two_value.tiff",cv2.IMREAD_GRAYSCALE) #判定用
+img_ave2=cv2.imread(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/two_value.tiff",cv2.IMREAD_GRAYSCALE)    #出力用
 
 # 円の中心座標を取得
 x = circles[0, :, 0]
@@ -133,9 +133,17 @@ if circles is not None:
         radius = i[2]
         cv2.circle(img_ave, center, radius, 0, 2)
         cv2.circle(img_ave, center, 2, 0, 3)
+
+cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/add_circle.tiff", img_ave)
+
+if circles is not None:
+    circles = np.uint16(np.around(circles))
+    for i in circles[0, :]:
+        center = (i[0], i[1])
+        radius = i[2]
         cv2.circle(img_ave,center,radius,0,thickness=-1)
 
-cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/add_circle2.tiff", img_ave)
+cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/add_black_circle.tiff", img_ave)
 
 # 円中心座標を配列に格納
 points = np.zeros((len(x), 2))
@@ -168,6 +176,9 @@ for i in range(len(x)):
             if connected==True:  
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=0
                 black+=47^2
+            else:
+                img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
+                white+=47^2
         else:
             img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
             white+=47^2
@@ -177,7 +188,7 @@ for i in range(len(x)):
 for i in range(len(x)):
     if points[i,0]-47>=points[:,0].min()-8 and points[i,1]+47<=points[:,1].max()+8: #ピラー領域内の矩形のみを判定対象とする条件
         crop=img_ave[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])] #矩形領域の取り出し
-        cv2.imwrite("F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/test/crop2.tiff",crop)
+        cv2.imwrite("F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/test/crop.tiff",crop)
         #矩形を反時計回りに45度回転
         center=(47//2,47//2)
         M=cv2.getRotationMatrix2D(center, 135, 1.0)
@@ -195,24 +206,27 @@ for i in range(len(x)):
             if connected==True:
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=0
                 black+=47^2
+            else:
+                img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
+                white+=47^2
         else:
             img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
             white+=47^2
 
 #充填領域を黒く塗った画像の保存
-cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/result2.tiff",img_ave2)
+cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/result.tiff",img_ave2)
 
 #充填率の算出
     #e[k-2]=black/(black+white)
 
 #充填率の時間変化の散布図
-plt.scatter(t,e)
-plt.xlabel('t(min)')
-plt.ylabel('filing factor(-)')
-plt.title('t-filfac')
-plt.savefig('F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/filing_factor.png')
+#plt.scatter(t,e)
+#plt.xlabel('t(min)')
+#plt.ylabel('filing factor(-)')
+#plt.title('t-filfac')
+#plt.savefig('F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/filing_factor.png')
 
 #csv化
-forcsv=pd.DataFrame({"time[min]":t,"filing factor[-]":e})
-forcsv.to_csv('F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/filing_factor.png')
+#forcsv=pd.DataFrame({"time[min]":t,"filing factor[-]":e})
+#forcsv.to_csv('F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/filing_factor.png')
 
