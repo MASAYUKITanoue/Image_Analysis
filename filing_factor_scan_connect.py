@@ -177,13 +177,13 @@ for k in range(2,26):
                 connected=is_connected_black_path_left(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
                 if connected==True:  
                     img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=0
-                    black+=47^2
+                    black+=47**2
                 else:
                     img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
-                    white+=47^2
+                    white+=47**2
             else:
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
-                white+=47^2
+                white+=47**2
             
 
     #ピラー円中心を右上とした矩形内の充填判定
@@ -207,13 +207,13 @@ for k in range(2,26):
                 connected=is_connected_black_path_right(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
                 if connected==True:  
                     img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=0
-                    black+=47^2
+                    black+=47**2
                 else:
                     img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
-                    white+=47^2
+                    white+=47**2
             else:
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
-                white+=47^2
+                white+=47**2
 
     #充填領域を黒く塗った画像の保存
     cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/result{k}.tiff",img_ave2)

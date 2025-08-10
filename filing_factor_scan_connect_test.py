@@ -158,7 +158,7 @@ white=0
 for i in range(len(x)):
     if points[i,0]+47<=points[:,0].max()+8 and points[i,1]+47<=points[:,1].max()+8: #ピラー領域内の矩形のみを判定対象とする条件
         crop=img_ave[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47] #矩形領域の取り出し
-        
+
         #矩形を反時計回りに45度回転
         center=(47//2,47//2)
         M=cv2.getRotationMatrix2D(center, 45, 1.0)
@@ -175,20 +175,22 @@ for i in range(len(x)):
             connected=is_connected_black_path_left(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
             if connected==True:  
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=0
-                black+=47^2
+                black+=47**2
             else:
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
-                white+=47^2
+                white+=47**2
+                cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/test/left/crop{i}.tiff",crop)
         else:
             img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
-            white+=47^2
+            white+=47**2
+            cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/test/left/crop{i}.tiff",crop)
             
 
 #ピラー円中心を右上とした矩形内の充填判定
 for i in range(len(x)):
     if points[i,0]-47>=points[:,0].min()-8 and points[i,1]+47<=points[:,1].max()+8: #ピラー領域内の矩形のみを判定対象とする条件
         crop=img_ave[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])] #矩形領域の取り出し
-        cv2.imwrite("F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/test/crop.tiff",crop)
+        
         #矩形を反時計回りに45度回転
         center=(47//2,47//2)
         M=cv2.getRotationMatrix2D(center, 135, 1.0)
@@ -202,20 +204,24 @@ for i in range(len(x)):
 
         #judgeのすべての値が1なら，その矩形を黒く塗る      
         if (true==1).all():
-            connected=is_connected_black_path_left(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
+            connected=is_connected_black_path_right(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
             if connected==True:
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=0
-                black+=47^2
+                black+=47**2
             else:
                 img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
-                white+=47^2
+                white+=47**2
+                cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/test/right/crop{i}.tiff",crop)
         else:
             img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
-            white+=47^2
+            white+=47**2
+            cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/test/right/crop{i}.tiff",crop)
 
 #充填領域を黒く塗った画像の保存
 cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/result.tiff",img_ave2)
 
+print(black)
+print(white)
 #充填率の算出
     #e[k-2]=black/(black+white)
 
