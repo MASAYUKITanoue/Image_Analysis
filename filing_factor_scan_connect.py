@@ -8,10 +8,10 @@ import matplotlib
 matplotlib.use("Agg") 
 from collections import deque
 
-m=50    #連続画像枚数
-n=24    #解析スタック数
+m=150    #連続画像枚数
+n=8    #解析スタック数
 s=150    #2値化閾値（ピラー円と粒子の輝度値のみが0になる値に設定）
-t=range(2,26) #画像撮影時間
+t=np.array((4,8,12,16,20,24,28,31)) #画像撮影時間
 e=np.zeros(n)  #充填率格納箱
 
 #ピラー間で粒子が繋がっているかを判定する関数（左上）
@@ -82,8 +82,8 @@ def is_connected_black_path_right(img):
 
     return False
 
-for k in range(2,26):
-    img=tiff.imread(f"F:/experiment/2025_06_21_grid_particle/{k}.tiff")
+for idx,k in enumerate(t):
+    img=tiff.imread(f"F:/experiment/2025_08_18_grid_particle/{k}.tiff")
 
     #連続画像の平均を取り，流動粒子を排除
     img_ave=np.zeros((2048,2048))
@@ -95,7 +95,7 @@ for k in range(2,26):
         img_ave = (255 * (img_ave / np.max(img_ave))).astype(np.uint8)
 
     #流動粒子排除画像の保存
-    cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/ave{k}.tiff",img_ave)
+    cv2.imwrite(f"F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/ave/ave{k}.tiff",img_ave)
 
     # メディアンフィルタ適用（）
     img_ave = cv2.medianBlur(img_ave, ksize=3) 
@@ -104,7 +104,7 @@ for k in range(2,26):
     circles = cv2.HoughCircles(
         img_ave, 
         cv2.HOUGH_GRADIENT, dp=1.0, minDist=10,
-        param1=150, param2=10, minRadius=20, maxRadius=25
+        param1=150, param2=15, minRadius=20, maxRadius=25
     )
 
     #閾値sを基準に2値化
@@ -116,11 +116,11 @@ for k in range(2,26):
                 img_ave[i,j]=255
 
     #2値化後の画像の保存
-    cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/two_value{k}.tiff",img_ave)
+    cv2.imwrite(f"F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/binary/binary{k}.tiff",img_ave)
 
     #2値化後の画像をグレースケールで読み込み
-    img_ave=cv2.imread(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
-    img_ave2=cv2.imread(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
+    img_ave=cv2.imread(f"F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/binary/binary{k}.tiff",cv2.IMREAD_GRAYSCALE)
+    img_ave2=cv2.imread(f"F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/binary/binary{k}.tiff",cv2.IMREAD_GRAYSCALE)
 
     # 円の中心座標を取得
     x = circles[0, :, 0]
@@ -135,7 +135,7 @@ for k in range(2,26):
             cv2.circle(img_ave, center, radius, 0, 2)
             cv2.circle(img_ave, center, 2, 0, 3)
 
-    cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/add_circle{k}.tiff", img_ave)
+    cv2.imwrite(f"F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/add_circle/add_circle{k}.tiff", img_ave)
 
     # 円を描画
     if circles is not None:
@@ -145,7 +145,7 @@ for k in range(2,26):
             radius = i[2]
             cv2.circle(img_ave,center,radius,0,thickness=-1)
 
-    cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/add_circle{k}.tiff", img_ave)
+    #cv2.imwrite(f"F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/add_circle/add_circle{k}.tiff", img_ave)
 
     # 円中心座標を配列に格納
     points = np.zeros((len(x), 2))
@@ -216,18 +216,18 @@ for k in range(2,26):
                 white+=47**2
 
     #充填領域を黒く塗った画像の保存
-    cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/result{k}.tiff",img_ave2)
+    cv2.imwrite(f"F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/output/result{k}.tiff",img_ave2)
 
     #充填率の算出
-    e[k-2]=black/(black+white)
+    e[idx]=black/(black+white)
 
 #充填率の時間変化の散布図
 plt.scatter(t,e)
 plt.xlabel('t(min)')
 plt.ylabel('filing factor(-)')
 plt.title('t-filfac')
-plt.savefig('F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/filing_factor.png')
+plt.savefig('F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/output/filing_factor.png')
 
 #csv化
 forcsv=pd.DataFrame({"time[min]":t,"filing factor[-]":e})
-forcsv.to_csv('F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/filing_factor.png')
+forcsv.to_csv('F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/output/filing_factor.csv')
