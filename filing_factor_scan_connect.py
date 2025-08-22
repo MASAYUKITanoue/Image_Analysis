@@ -144,7 +144,8 @@ for idx,k in enumerate(t):
             center = (i[0], i[1])
             radius = i[2]
             cv2.circle(img_ave,center,radius,0,thickness=-1)
-
+    
+    #検出円内部を塗りつぶした画像の出力（必要ない為コメントアウト）
     #cv2.imwrite(f"F:/experiment/2025_08_18_grid_particle/imgana/filing_factor/add_circle/add_circle{k}.tiff", img_ave)
 
     # 円中心座標を配列に格納
@@ -172,7 +173,7 @@ for idx,k in enumerate(t):
                 if (rotated[:,j]<=0).any():
                     judge[j]=1  #trueの場合，judgeに1を格納する
 
-            #judgeのすべての値が1なら，その矩形を黒く塗る
+            #充填しているかの判定
             if (judge==1).all():    
                 connected=is_connected_black_path_left(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
                 if connected==True:  
