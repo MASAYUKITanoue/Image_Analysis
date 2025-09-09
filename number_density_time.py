@@ -5,14 +5,14 @@ matplotlib.use("Agg")
 import numpy as np
 import cv2
 #パラメータ設定
-m=1  #撮影枚数
+m=50  #連続画像枚数
 l=1.28*0.001  #1pxあたりの長さ（mm）
 h=10*0.001    #流路高さ(mm)
 
 #値格納箱
-t=np.array((0,14))
-w=np.zeros(2)
-target_num=[0,14]
+t=np.array((0)) #撮影時間[min]
+w=np.zeros(m)  #数密度格納用配列 
+target_num=[0,14]   #for文中iに入る値(画像の番号の振り方に合わせる)
 
 for idx,i in enumerate(target_num):
     #imagejからのデータの読み込み(1列目と2,3,4行目を消去後のデータ)
