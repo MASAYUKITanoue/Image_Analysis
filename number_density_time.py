@@ -11,7 +11,7 @@ h=10*0.001    #流路高さ(mm)
 
 #値格納箱
 t=np.array((0)) #撮影時間[min]
-w=np.zeros(m)  #数密度格納用配列 
+w=np.zeros(1)  #数密度格納用配列 
 target_num=[0,14]   #for文中iに入る値(画像の番号の振り方に合わせる)
 
 for idx,i in enumerate(target_num):
