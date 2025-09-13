@@ -4,13 +4,6 @@ import matplotlib
 matplotlib.use("Agg") 
 import numpy as np
 
-#imagejからのデータの読み込み(1列目と2,3,4行目を消去後のデータ)
-stack_spots=pd.read_csv("F:/experiment/2025_08_18_grid_particle/imgana/numden/allspots0.csv")
-
-stack_spots_cut_1=stack_spots[["POSITION_Y","POSITION_T"]]#POSITION_Y,POSITION_T列のみを取り出す
-
-stack_spots_cut_1.to_csv("F:/experiment/2025_08_18_grid_particle/imgana/numden/place/spots_cut.csv")#切り取り後のcsvファイルの保存
-
 #パラメータ設定
 n=30    #y軸の分割個数
 x=1695   #検査体積のx軸方向のpx数
@@ -18,6 +11,13 @@ y=1776/n   #検査体積のy軸方向のpx数
 m=50    #撮影枚数
 l=1.28*0.001  #1pxあたりの長さ（mm）
 t=10*0.001    #流路高さ(mm)
+
+#imagejからのデータの読み込み(1列目と2,3,4行目を消去後のデータ)
+stack_spots=pd.read_csv("F:/experiment/2025_08_18_grid_particle/imgana/numden/allspots0.csv")
+
+stack_spots_cut_1=stack_spots[["POSITION_Y","POSITION_T"]]#POSITION_Y,POSITION_T列のみを取り出す
+
+stack_spots_cut_1.to_csv("F:/experiment/2025_08_18_grid_particle/imgana/numden/place/spots_cut.csv")#切り取り後のcsvファイルの保存
 
 #データ格納場所の作成
 a=np.zeros(n)
