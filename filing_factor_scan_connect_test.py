@@ -222,6 +222,7 @@ cv2.imwrite(f"F:/experiment/2025_08_02_grid_particle/imgana/filing_factor/result
 
 print(black)
 print(white)
+#テスト用のため、結果の出力はコンソールのみ
 #充填率の算出
     #e[k-2]=black/(black+white)
 
