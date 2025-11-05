@@ -81,7 +81,7 @@ def moving_flowparticle(img,m):
     img_ave=np.zeros((2048,2048))
     for i in range(0,m):
         img_ave=img_ave+img[i]/m
-    if img_ave.dtype != np.unit8:
+    if img_ave.dtype != np.uint8:
         img_ave = (255 * (img_ave / np.max(img_ave))).astype(np.uint8)
     img_ave = cv2.medianBlur(img_ave, ksize=3) 
     return img_ave
@@ -110,6 +110,14 @@ def get_circlepx(circles):
     points = np.zeros((len(x), 2))
     points[:, 0] = x
     points[:, 1] = y
+    points=points[np.argsort(points[:,1])]
+    points_sort=np.zeros([len(points),2])
+    j=0
+    for i in range(int(len(points)/20)):
+        points_tmp=points[j:j+20,:]
+        points_tmp=points_tmp[np.argsort(points_tmp[:,0])]
+        points_sort[j:j+20]=points_tmp
+        j=j+20
     return points,x
 
 def circle_line(img_ave,circles,cf):
@@ -204,10 +212,10 @@ def main():
     m=50    #連続画像枚数
     n=24    #解析スタック数
     s=150    #2値化閾値（ピラー円と粒子の輝度値のみが0になる値に設定）
-    t=range(2,26) #画像撮影時間(min)
+    t=range(4,26) #画像撮影時間(min)
     e=np.zeros(n)  #充填率格納箱
-    filepath="F:/experiment/2025_06_21_grid_particle"
-    for k in range(2,26):
+    filepath="F:/experiment/2025_08_18_grid_particle"
+    for k in range(4,26):
         img=tiff.imread(filepath+f"/{k}.tiff")
 
         #連続画像の平均を取り，流動粒子を排除
