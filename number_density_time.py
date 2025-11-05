@@ -5,28 +5,26 @@ matplotlib.use("Agg")
 import numpy as np
 import cv2
 #パラメータ設定
-m=1    #撮影枚数
+m=50  #連続画像枚数
 l=1.28*0.001  #1pxあたりの長さ（mm）
 h=10*0.001    #流路高さ(mm)
 
 #値格納箱
-t=np.array((0,4,8,12,16,20,24,28,32))
-w=np.zeros(9)
-target_num=[0,4,8,12,16,20,24,28,32]
+t=np.array((0)) #撮影時間[min]
+w=np.zeros(1)  #数密度格納用配列 
+target_num=[0,14]   #for文中iに入る値(画像の番号の振り方に合わせる)
 
 for idx,i in enumerate(target_num):
     #imagejからのデータの読み込み(1列目と2,3,4行目を消去後のデータ)
-    stack_spots=pd.read_csv(f"F:/experiment/2025_08_02_grid_particle/imgana/numden/time/ave/spots{i}.csv")
+    stack_spots=pd.read_csv(f"F:/experiment/2025_08_18_grid_particle/imgana/numden/time/ave/ave_spots{i}.csv")
 
     stack_spots_cut_1=stack_spots[["POSITION_Y","POSITION_T"]]#POSITION_Y,POSITION_T列のみを取り出す
 
-    stack_spots_cut_1.to_csv(f"F:/experiment/2025_08_02_grid_particle/imgana/numden/time/ave/output/spots_cut{i}.csv")#切り取り後のcsvファイルの保存
+    stack_spots_cut_1.to_csv(f"F:/experiment/2025_08_18_grid_particle/imgana/numden/time/ave/output/allspots_cut{i}.csv")#切り取り後のcsvファイルの保存
 
     count=len(stack_spots_cut_1)
 
-    print(count)
-
-    img = cv2.imread(f"F:/experiment/2025_07_05_grid_particle/imgana/numden/time/crop{i}.tiff", cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread(f"F:/experiment/2025_08_18_grid_particle/imgana/crop{i}.tiff", cv2.IMREAD_GRAYSCALE)
     
     height,width=img.shape
 
@@ -39,9 +37,9 @@ plt.scatter(t,w)
 plt.xlabel('t(min)')
 plt.ylabel('number density(/mm3)')
 plt.title('t-num den')
-plt.savefig('F:/experiment/2025_08_02_grid_particle/imgana/numden/time/ave/output/num_den_time.png')
+plt.savefig('F:/experiment/2025_08_18_grid_particle/imgana/numden/time/ave/output/num_den_time.png')
 
 #csv化
 forcsv=pd.DataFrame({"time[min]":t,"numden[/mm3]":w})
 
-forcsv.to_csv("F:/experiment/2025_08_02_grid_particle/imgana/numden/time/ave/output/num_den_time.csv")
+forcsv.to_csv("F:/experiment/2025_08_18_grid_particle/imgana/numden/time/ave/output/num_den_time.csv")
