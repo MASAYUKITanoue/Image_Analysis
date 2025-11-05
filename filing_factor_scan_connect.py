@@ -110,6 +110,7 @@ def get_circlepx(circles):
     points = np.zeros((len(x), 2))
     points[:, 0] = x
     points[:, 1] = y
+    #左上ピラーを0番として各行に番号付け
     points=points[np.argsort(points[:,1])]
     points_sort=np.zeros([len(points),2])
     j=0
@@ -118,7 +119,7 @@ def get_circlepx(circles):
         points_tmp=points_tmp[np.argsort(points_tmp[:,0])]
         points_sort[j:j+20]=points_tmp
         j=j+20
-    return points,x
+    return points_sort,x
 
 def circle_line(img_ave,circles,cf):
     if circles is not None:
