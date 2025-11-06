@@ -135,9 +135,14 @@ def circle_line(img_ave,circles,cf):
                 cv2.circle(img_ave,center,radius,0,thickness=-1)
     return img_ave
 
-def fill_judge_left(points,x,img_ave,img_ave2,black,white):
+def fill_judge_left(points,x,img_ave,img_filling,black,white):
+    #lowは行index(20ピラーごと),colは列index(1start)
+    low=0
+    col=1
+    col_flg=1
     #ピラー円中心を左上とした矩形内の充填判定
     for i in range(len(x)):
+
         if points[i,0]+47<=points[:,0].max()+8 and points[i,1]+47<=points[:,1].max()+8: #ピラー領域内の矩形のみを判定対象とする条件
             crop=img_ave[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47] #矩形領域の取り出し
 
@@ -156,17 +161,30 @@ def fill_judge_left(points,x,img_ave,img_ave2,black,white):
             if (judge==1).all():    
                 connected=is_connected_black_path_left(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
                 if connected==True:  
-                    img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=0
+                    img_filling[low,col]=150
                     black+=47**2
                 else:
-                    img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
+                    img_filling[low,col]=250
                     white+=47**2
             else:
-                img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47]=150
+                img_filling[low,col]=250
                 white+=47**2
-    return img_ave2,black,white
+            col=col+2
+        #開始インデックス更新
+        if (i+1)%20==0:
+            low=low+1
+            if col_flg==1:
+                col_flg=0
+            else:
+                col_flg=1
+            col=col_flg
+    return img_filling,black,white
 
-def fill_judge_right(points,x,img_ave,img_ave2,black,white):
+def fill_judge_right(points,x,img_ave,img_filling,black,white):
+    #lowは行index(20ピラーごと),colは列index(1start)
+    low=0
+    col=0
+    col_flg=0
     #ピラー円中心を右上とした矩形内の充填判定
     for i in range(len(x)):
         if points[i,0]-47>=points[:,0].min()-8 and points[i,1]+47<=points[:,1].max()+8: #ピラー領域内の矩形のみを判定対象とする条件
@@ -187,15 +205,24 @@ def fill_judge_right(points,x,img_ave,img_ave2,black,white):
             if (true==1).all():
                 connected=is_connected_black_path_right(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
                 if connected==True:  
-                    img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=0
+                    img_filling[low,col]=150
                     black+=47**2
                 else:
-                    img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
+                    img_filling[low,col]=250
                     white+=47**2
             else:
-                img_ave2[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])]=150
+                img_filling[low,col]=250
                 white+=47**2
-    return img_ave2,black,white
+            col=col+2
+        #開始インデックス更新
+        if (i+1)%20==0:
+            low=low+1
+            if col_flg==1:
+                col_flg=0
+            else:
+                col_flg=1
+            col=col_flg
+    return img_filling,black,white
 
 def save_graph(t,e,filepath):
     #充填率の時間変化の散布図
@@ -207,7 +234,17 @@ def save_graph(t,e,filepath):
 
     #csv化  
     forcsv=pd.DataFrame({"time[min]":t,"filing factor[-]":e})
-    forcsv.to_csv(filepath+'/imgana/filing_factor/filing_factor.png')
+    forcsv.to_csv(filepath+'/imgana/filing_factor/filing_factor.csv')
+
+def save_dist(x,row,k,filepath):
+    forcsv=pd.DataFrame({"place[-]":x,"filing_factor_dist[-]":row})
+    forcsv.to_csv(filepath+f"/imgana/filing_factor/filing_dist{k}.csv")
+    
+def get_row_filling(img_row_filling):
+    rfill=np.zeros(38)
+    for i in range(38):
+        rfill[i]=np.count_nonzero(img_row_filling[i]==150)/38
+    return rfill
 
 def main():
     m=50    #連続画像枚数
@@ -232,7 +269,7 @@ def main():
 
         #2値化後の画像をグレースケールで読み込み
         img_ave=cv2.imread(filepath+f"/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
-        img_ave2=cv2.imread(filepath+f"/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
+        img_filling=np.zeros((38,39))#判定結果の可視化1px=1充填
 
         img_ave=circle_line(img_ave,circles,0)
 
@@ -248,11 +285,16 @@ def main():
         black=0
         white=0
 
-        img_ave2,black,white=fill_judge_left(points,x,img_ave,img_ave2,black,white)         
-        img_ave2,black,white=fill_judge_right(points,x,img_ave,img_ave2,black,white)
+        img_filling,black,white=fill_judge_left(points,x,img_ave,img_filling,black,white)         
+        img_filling,black,white=fill_judge_right(points,x,img_ave,img_filling,black,white)
 
         #充填領域を黒く塗った画像の保存
-        cv2.imwrite(filepath+f"/imgana/filing_factor/result{k}.tiff",img_ave2)
+        cv2.imwrite(filepath+f"/imgana/filing_factor/result{k}.png",img_filling)
+
+        row_filing=get_row_filling(img_filling)
+        x_point=range(38)
+
+        save_dist(x_point,row_filing,k,filepath)
 
         #充填率の算出
         e[k-2]=black/(black+white)
