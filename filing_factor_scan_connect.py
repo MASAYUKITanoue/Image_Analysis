@@ -257,11 +257,14 @@ def save_dist(x,row,k,filepath):
     forcsv=pd.DataFrame({"place[-]":x,"filing_factor_dist[-]":row})
     forcsv.to_csv(filepath+f"/imgana/filing_factor/xdist/filing_dist{k}.csv")
     
-def get_row_filling(img_row_filling):
-    rfill=np.zeros(42)
-    for i in range(42):
-        rfill[i]=np.count_nonzero(img_row_filling[i]==150)/42
-    return rfill
+def get_col_filling(img_row_filling):
+    rows, cols = img_row_filling.shape
+    cfill = np.zeros(cols)
+    for j in range(cols):
+        # 列 j の充填率 = 列 j の黒(150) の個数 ÷ 全行数
+        cfill[j] = np.count_nonzero(img_row_filling[:, j] == 150) / rows
+
+    return cfill
 
 def makedir(filepath):
     os.makedirs(filepath+f"/imgana/filing_factor/xdist",exist_ok=True)
@@ -322,8 +325,8 @@ def main():
         # ★ 矩形のメッシュを描いた画像を保存
         cv2.imwrite(filepath+f"/imgana/filing_factor/rect_mesh{k}.png", img_debug)
 
-        row_filing=get_row_filling(img_filling)
-        x_point=range(42)
+        row_filing=get_col_filling(img_filling)
+        x_point=range(43)
 
         save_dist(x_point,row_filing,k,filepath)
 
