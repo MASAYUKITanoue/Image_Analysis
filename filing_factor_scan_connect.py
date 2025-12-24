@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg") 
 from collections import deque
-
+import os
 
 #ピラー間で粒子が繋がっているかを判定する関数（左上）
 def is_connected_black_path_left(img):
@@ -77,8 +77,8 @@ def is_connected_black_path_right(img):
 
     return False
 
-def moving_flowparticle(img,m):
-    img_ave=np.zeros((2048,2048))
+def moving_flowparticle(img,height,width,m):
+    img_ave=np.zeros((height,width))
     for i in range(0,m):
         img_ave=img_ave+img[i]/m
     if img_ave.dtype != np.uint8:
@@ -91,13 +91,13 @@ def hough_circle(img_ave):
     circles = cv2.HoughCircles(
         img_ave, 
         cv2.HOUGH_GRADIENT, dp=1.0, minDist=10,
-        param1=150, param2=15, minRadius=20, maxRadius=25
+        param1=120, param2=20, minRadius=20, maxRadius=25
     )
     return circles
 
-def two_value(img_ave,s):
-    for i in range(2048):
-        for j in range(2048):
+def two_value(img_ave,height,width,s):
+    for i in range(height):
+        for j in range(width):
             if img_ave[i,j]<s:
                 img_ave[i,j]=0
             else:
@@ -114,11 +114,11 @@ def get_circlepx(circles):
     points=points[np.argsort(points[:,1])]
     points_sort=np.zeros([len(points),2])
     j=0
-    for i in range(int(len(points)/20)):
-        points_tmp=points[j:j+20,:]
+    for i in range(int(len(points)/22)):
+        points_tmp=points[j:j+22,:]
         points_tmp=points_tmp[np.argsort(points_tmp[:,0])]
-        points_sort[j:j+20]=points_tmp
-        j=j+20
+        points_sort[j:j+22]=points_tmp
+        j=j+22
     return points_sort,x
 
 def circle_line(img_ave,circles,cf):
@@ -135,7 +135,7 @@ def circle_line(img_ave,circles,cf):
                 cv2.circle(img_ave,center,radius,0,thickness=-1)
     return img_ave
 
-def fill_judge_left(points,x,img_ave,img_filling,black,white):
+def fill_judge_left(points,x,img_ave,img_filling,black,white,img_debug=None):
     #lowは行index(20ピラーごと),colは列index(1start)
     low=0
     col=1
@@ -143,17 +143,26 @@ def fill_judge_left(points,x,img_ave,img_filling,black,white):
     #ピラー円中心を左上とした矩形内の充填判定
     for i in range(len(x)):
 
-        if points[i,0]+47<=points[:,0].max()+8 and points[i,1]+47<=points[:,1].max()+8: #ピラー領域内の矩形のみを判定対象とする条件
-            crop=img_ave[int(points[i,1]):int(points[i,1])+47,int(points[i,0]):int(points[i,0])+47] #矩形領域の取り出し
+        if points[i,0]+41<=points[:,0].max()+2 and points[i,1]+41<=points[:,1].max()+2: #ピラー領域内の矩形のみを判定対象とする条件
+            crop=img_ave[int(points[i,1]):int(points[i,1])+41,int(points[i,0]):int(points[i,0])+41] #矩形領域の取り出し
 
+            # ★ デバッグ用：元画像（カラー）に矩形の外形線を描画
+            if img_debug is not None:
+                # 左上 (x0, y0) から 41×41 → 右下は (x0+40, y0+40)
+                cv2.rectangle(
+                    img_debug,
+                    (int(points[i,0]), int(points[i,1])),
+                    (int(points[i,0]) + 41, int(points[i,1]) + 41),
+                    (0, 0, 255),  # 赤線（BGR）
+                )
             #矩形を反時計回りに45度回転
-            center=(47//2,47//2)
+            center=(41//2,41//2)
             M=cv2.getRotationMatrix2D(center, 45, 1.0)
-            rotated=cv2.warpAffine(crop, M, (47, 47))
+            rotated=cv2.warpAffine(crop, M, (41, 41))
 
             #矩形の各列においていずれかの行に輝度値0のpxがあるかを判定
-            judge=np.zeros(47) 
-            for j in range(47):
+            judge=np.zeros(41) 
+            for j in range(41):
                 if (rotated[:,j]<=0).any():
                     judge[j]=1  #trueの場合，judgeに1を格納する
 
@@ -162,42 +171,50 @@ def fill_judge_left(points,x,img_ave,img_filling,black,white):
                 connected=is_connected_black_path_left(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
                 if connected==True:  
                     img_filling[low,col]=150
-                    black+=47**2
+                    black+=41**2
                 else:
                     img_filling[low,col]=250
-                    white+=47**2
+                    white+=41**2
             else:
                 img_filling[low,col]=250
-                white+=47**2
+                white+=41**2
             col=col+2
         #開始インデックス更新
-        if (i+1)%20==0:
+        if (i+1)%22==0:
             low=low+1
             if col_flg==1:
                 col_flg=0
             else:
                 col_flg=1
             col=col_flg
-    return img_filling,black,white
+    return img_filling,black,white,img_debug
 
-def fill_judge_right(points,x,img_ave,img_filling,black,white):
+def fill_judge_right(points,x,img_ave,img_filling,black,white,img_debug):
     #lowは行index(20ピラーごと),colは列index(1start)
     low=0
     col=0
     col_flg=0
     #ピラー円中心を右上とした矩形内の充填判定
     for i in range(len(x)):
-        if points[i,0]-47>=points[:,0].min()-8 and points[i,1]+47<=points[:,1].max()+8: #ピラー領域内の矩形のみを判定対象とする条件
-            crop=img_ave[int(points[i,1]):int(points[i,1])+47,int(points[i,0])-47:int(points[i,0])] #矩形領域の取り出し
-
+        if points[i,0]-41>=points[:,0].min()-2 and points[i,1]+41<=points[:,1].max()+2: #ピラー領域内の矩形のみを判定対象とする条件
+            crop=img_ave[int(points[i,1]):int(points[i,1])+41,int(points[i,0])-41:int(points[i,0])] #矩形領域の取り出し
+            # ★ デバッグ用：元画像（カラー）に矩形の外形線を描画
+            if img_debug is not None:
+                # 左上 (x0, y0) から 41×41 → 右下は (x0+40, y0+40)
+                cv2.rectangle(
+                    img_debug,
+                    (int(points[i,0])-41, int(points[i,1])),
+                    (int(points[i,0]), int(points[i,1]) + 41),
+                    (255, 0, 0),  # 赤線（BGR）
+                )
             #矩形を反時計回りに45度回転
-            center=(47//2,47//2)
+            center=(41//2,41//2)
             M=cv2.getRotationMatrix2D(center, 135, 1.0)
-            rotated=cv2.warpAffine(crop, M, (47, 47))
+            rotated=cv2.warpAffine(crop, M, (41, 41))
 
             #矩形の各列においていずれかの行に輝度値0のpxがあるかを判定
-            true=np.zeros(47)
-            for j in range(47):
+            true=np.zeros(41)
+            for j in range(41):
                 if (rotated[:,j]<=50).any():
                     true[j]=1   #trueの場合，judgeに1を格納する
 
@@ -206,23 +223,23 @@ def fill_judge_right(points,x,img_ave,img_filling,black,white):
                 connected=is_connected_black_path_right(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
                 if connected==True:  
                     img_filling[low,col]=150
-                    black+=47**2
+                    black+=41**2
                 else:
                     img_filling[low,col]=250
-                    white+=47**2
+                    white+=41**2
             else:
                 img_filling[low,col]=250
-                white+=47**2
+                white+=41**2
             col=col+2
         #開始インデックス更新
-        if (i+1)%20==0:
+        if (i+1)%22==0:
             low=low+1
             if col_flg==1:
                 col_flg=0
             else:
                 col_flg=1
             col=col_flg
-    return img_filling,black,white
+    return img_filling,black,white,img_debug
 
 def save_graph(t,e,filepath):
     #充填率の時間変化の散布図
@@ -238,46 +255,54 @@ def save_graph(t,e,filepath):
 
 def save_dist(x,row,k,filepath):
     forcsv=pd.DataFrame({"place[-]":x,"filing_factor_dist[-]":row})
-    forcsv.to_csv(filepath+f"/imgana/filing_factor/filing_dist{k}.csv")
+    forcsv.to_csv(filepath+f"/imgana/filing_factor/xdist/filing_dist{k}.csv")
     
 def get_row_filling(img_row_filling):
-    rfill=np.zeros(38)
-    for i in range(38):
-        rfill[i]=np.count_nonzero(img_row_filling[i]==150)/38
+    rfill=np.zeros(42)
+    for i in range(42):
+        rfill[i]=np.count_nonzero(img_row_filling[i]==150)/42
     return rfill
+
+def makedir(filepath):
+    os.makedirs(filepath+f"/imgana/filing_factor/xdist",exist_ok=True)
 
 def main():
     m=50    #連続画像枚数
-    n=24    #解析スタック数
+    n=10    #解析スタック数
     s=150    #2値化閾値（ピラー円と粒子の輝度値のみが0になる値に設定）
-    t=range(4,26) #画像撮影時間(min)
+    t=range(0,10) #画像撮影時間(min)
     e=np.zeros(n)  #充填率格納箱
-    filepath="F:/experiment/2025_08_18_grid_particle"
-    for k in range(4,26):
+    filepath="F:/experiment/2025_12_20_grid_particle_8um halfcircle_15um"
+    makedir(filepath)
+    for k in range(0,10):
         img=tiff.imread(filepath+f"/{k}.tiff")
 
+        # 画像サイズの取得
+        height = img.shape[1]
+        width = img.shape[2]
+
         #連続画像の平均を取り，流動粒子を排除
-        img_ave=moving_flowparticle(img,m)
+        img_ave=moving_flowparticle(img,height,width,m)
 
         cv2.imwrite(filepath+f"/imgana/filing_factor/ave{k}.tiff",img_ave)
 
         circles=hough_circle(img_ave)
 
-        img_ave=two_value(img_ave,s)
+        img_ave=two_value(img_ave,height,width,s)
 
         cv2.imwrite(filepath+f"/imgana/filing_factor/two_value{k}.tiff",img_ave)
 
         #2値化後の画像をグレースケールで読み込み
         img_ave=cv2.imread(filepath+f"/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
-        img_filling=np.zeros((38,39))#判定結果の可視化1px=1充填
+        img_filling=np.zeros((42,43))#判定結果の可視化1px=1充填
 
         img_ave=circle_line(img_ave,circles,0)
 
-        cv2.imwrite(filepath+f"/imgana/filing_factor/add_circle_line{k}.tiff", img_ave)
+        #cv2.imwrite(filepath+f"/imgana/filing_factor/add_circle_line{k}.tiff", img_ave)
 
         img_ave=circle_line(img_ave,circles,1)
 
-        #cv2.imwrite(f"F:/experiment/2025_06_21_grid_particle/imgana/filing_factor/add_circle{k}.tiff", img_ave)円周のみで十分か
+        cv2.imwrite(filepath+f"/imgana/filing_factor/add_circle{k}.tiff", img_ave) #円周のみで十分か
 
         points,x=get_circlepx(circles)
     
@@ -285,19 +310,25 @@ def main():
         black=0
         white=0
 
-        img_filling,black,white=fill_judge_left(points,x,img_ave,img_filling,black,white)         
-        img_filling,black,white=fill_judge_right(points,x,img_ave,img_filling,black,white)
+        # ★ デバッグ用画像（矩形の外形線を描くキャンバス）
+        img_debug = cv2.cvtColor(img_ave.copy(), cv2.COLOR_GRAY2BGR)
+
+        img_filling,black,white,img_debug=fill_judge_left(points,x,img_ave,img_filling,black,white,img_debug)         
+        img_filling,black,white,img_debug=fill_judge_right(points,x,img_ave,img_filling,black,white,img_debug)
 
         #充填領域を黒く塗った画像の保存
         cv2.imwrite(filepath+f"/imgana/filing_factor/result{k}.png",img_filling)
 
+        # ★ 矩形のメッシュを描いた画像を保存
+        cv2.imwrite(filepath+f"/imgana/filing_factor/rect_mesh{k}.png", img_debug)
+
         row_filing=get_row_filling(img_filling)
-        x_point=range(38)
+        x_point=range(42)
 
         save_dist(x_point,row_filing,k,filepath)
 
         #充填率の算出
-        e[k-2]=black/(black+white)
+        e[k]=black/(black+white)
 
     save_graph(t,e,filepath)
 
