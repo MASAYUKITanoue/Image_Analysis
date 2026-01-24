@@ -272,12 +272,13 @@ def makedir(filepath):
 def main():
     m=50    #連続画像枚数
     n=10    #解析スタック数
-    s=150    #2値化閾値（ピラー円と粒子の輝度値のみが0になる値に設定）
-    t=range(0,10) #画像撮影時間(min)
+    s=50    #2値化閾値（ピラー円と粒子の輝度値のみが0になる値に設定）
+    t=range(5,51,5) #画像撮影時間(min)
     e=np.zeros(n)  #充填率格納箱
-    filepath="F:/experiment/2025_12_20_grid_particle_8um halfcircle_15um"
+    e_num=0
+    filepath="C:/All_Files/Laboratory/forgradu_exp/2026_1_23_grid_particle"
     makedir(filepath)
-    for k in range(0,10):
+    for k in range(5,51,5):
         img=tiff.imread(filepath+f"/{k}.tiff")
 
         # 画像サイズの取得
@@ -297,7 +298,7 @@ def main():
 
         #2値化後の画像をグレースケールで読み込み
         img_ave=cv2.imread(filepath+f"/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
-        img_filling=np.zeros((42,43))#判定結果の可視化1px=1充填
+        img_filling=np.zeros((44,43))#判定結果の可視化1px=1充填
 
         img_ave=circle_line(img_ave,circles,0)
 
@@ -331,8 +332,8 @@ def main():
         save_dist(x_point,row_filing,k,filepath)
 
         #充填率の算出
-        e[k]=black/(black+white)
-
+        e[e_num]=black/(black+white)
+        e_num=e_num+1
     save_graph(t,e,filepath)
 
 if __name__ == "__main__":
