@@ -3,11 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg") 
+import os
 
 #パラメータ設定
 l=1.28 #1pxあたりの長さ
 n=75 #framerate
 filepath="F:/experiment/2025_08_18_grid_particle"
+
+output_dir = filepath + "/imgana/velo/output"
+os.makedirs(output_dir, exist_ok=True)
 
 #csv整理と線形性による排除
 stack_tracks=pd.read_csv(filepath+"/imgana/velo/tracks0.csv")
