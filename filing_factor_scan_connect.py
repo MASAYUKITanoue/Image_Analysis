@@ -270,7 +270,7 @@ def makedir(filepath):
     os.makedirs(filepath+f"/imgana/filing_factor/xdist",exist_ok=True)
 
 def main():
-    m=10    #連続画像枚数
+    m=50    #連続画像枚数
     n=10    #解析スタック数
     s=50    #2値化閾値（ピラー円と粒子の輝度値のみが0になる値に設定）
     t=range(5,51,5) #画像撮影時間(min)
