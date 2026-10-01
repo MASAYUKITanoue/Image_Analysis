@@ -5,15 +5,7 @@ matplotlib.use("Agg")
 import numpy as np
 import cv2
 
-#パラメータ設定
-n=100    #y軸の分割個数
-target_num=[1,2,3,4,6,7,8,9,11,12,13,14,16,17,18,19,21,22,23,24,26,27,29]
-m=50    #撮影枚数
-l=1.28*0.001  #1pxあたりの長さ（mm）
-t=10*0.001    #流路高さ(mm)
-filepath="F:/experiment/2025_07_05_grid_particle"
-
-for j in target_num:
+def read_csv(j,n,filepath):
     #imagejからのデータの読み込み(1列目と2,3,4行目を消去後のデータ)
     stack_spots=pd.read_csv(filepath+f"/imgana/numden/time/spots{j}.csv")
 
@@ -25,9 +17,9 @@ for j in target_num:
 
     y_all,x=img.shape[:2]   #検査体積のxy軸方向のpx数
     y=y_all/n
+    return stack_spots_cut_1,y,x
 
-    print(x)
-    print(y)
+def calc(stack_spots_cut_1,y,x,m,l,t,n,filepath,j):
     #データ格納場所の作成
     a=np.zeros(n)
     b=np.zeros(n)
@@ -44,7 +36,9 @@ for j in target_num:
     num=b/(y*x*m*l*l*t)
 
     #print(num)#値の確認
+    return a,num
 
+def output_data(a,num,filepath,j):
     #可視化
     plt.figure()
     plt.scatter(a, num)
@@ -58,3 +52,25 @@ for j in target_num:
     forcsv=pd.DataFrame({"Position:y[um]":a,"numden[/mm3]":num})
 
     forcsv.to_csv(filepath+f"/imgana/numden/time/time_place/num_den_place{j}.csv")
+
+def main():
+    #パラメータ設定
+    n=100    #y軸の分割個数
+    target_num=[1,2,3,4,6,7,8,9,11,12,13,14,16,17,18,19,21,22,23,24,26,27,29] #撮影時刻
+    m=50    #撮影枚数
+    l=1.28*0.001  #1pxあたりの長さ（mm）
+    t=10*0.001    #流路高さ(mm)
+    filepath="F:/experiment/2025_07_05_grid_particle"
+
+    for j in target_num:
+        #csvの読み込みと整理
+        stack_spots_cut_1,y,x=read_csv(j,n,filepath)
+
+        #数密度の計算
+        a,num=calc(stack_spots_cut_1,y,x,m,l,t,n,filepath,j)
+
+        #データの出力
+        output_data(a,num,filepath,j)
+        
+if __name__ == "__main__":
+    main()
