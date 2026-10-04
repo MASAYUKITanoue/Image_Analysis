@@ -112,24 +112,24 @@ def fill_judge(points,x,img_ave,img_filling,black,white, colPillarNum, img_debug
             int(points[i,0]) - 20 >= 0
             and int(points[i,0]) + 20 < img_ave.shape[1]
             and int(points[i,1]) >= 0
-            and int(points[i,1]) + 20 < img_ave.shape[0]
+            and int(points[i,1]) + 30 < img_ave.shape[0]
         ):
-            crop=img_ave[int(points[i,1]):int(points[i,1] + 20),int(points[i,0]) - 20:int(points[i,0]) + 20] #矩形領域の取り出し
+            crop=img_ave[int(points[i,1]):int(points[i,1] + 30),int(points[i,0]) - 20:int(points[i,0]) + 20] #矩形領域の取り出し
 
             #元画像に検査領域の矩形を絵画した画像を作成
             if img_debug is not None:
                 cv2.rectangle(
                     img_debug,
                     (int(points[i,0]) - 20, int(points[i,1])),
-                    (int(points[i,0]) + 20, int(points[i,1]) + 20),
+                    (int(points[i,0]) + 20, int(points[i,1]) + 30),
                     (0, 0, 255),  # 赤線（BGR）
                 )
 
             #矩形の各列においていずれかの行に輝度値0のpxがあるかを判定
-            judge = np.zeros(crop.shape[1])
+            judge = np.zeros(crop.shape[0])
 
-            for j in range(crop.shape[1]):
-                if (crop[:,j]<=0).any():
+            for j in range(crop.shape[0]):
+                if (crop[j,:]<=0).any():
                     judge[j]=1  #trueの場合，judgeに1を格納する
 
             #充填しているかの判定
