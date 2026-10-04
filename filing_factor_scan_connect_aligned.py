@@ -9,7 +9,7 @@ matplotlib.use("Agg")
 from collections import deque
 import os
 
-#ピラー間で粒子が繋がっているかを判定する関数（左上）
+#ピラー間で粒子が繋がっているかを判定する関数
 def is_connected_black_path(img):
     h, w = img.shape
     visited = np.zeros_like(img, dtype=bool)
@@ -57,7 +57,7 @@ def hough_circle(img_ave):
     circles = cv2.HoughCircles(
         img_ave, 
         cv2.HOUGH_GRADIENT, dp=1.0, minDist=10,
-        param1=150, param2=10, minRadius=0, maxRadius=10
+        param1=130, param2=20, minRadius=0, maxRadius=10
     )
     return circles
 
@@ -117,9 +117,8 @@ def fill_judge(points,x,img_ave,img_filling,black,white,img_debug=None):
         ):
             crop=img_ave[int(points[i,1]):int(points[i,1] + 20),int(points[i,0]) - 20:int(points[i,0]) + 20] #矩形領域の取り出し
 
-            # ★ デバッグ用：元画像（カラー）に矩形の外形線を描画
+            #元画像に検査領域の矩形を絵画した画像を作成
             if img_debug is not None:
-                # 左上 (x0, y0) から 41×41 → 右下は (x0+40, y0+40)
                 cv2.rectangle(
                     img_debug,
                     (int(points[i,0]) - 20, int(points[i,1])),
@@ -146,9 +145,9 @@ def fill_judge(points,x,img_ave,img_filling,black,white,img_debug=None):
             else:
                 img_filling[low,col]=250
                 white+=41**2
-            col=col+2
+            col=col+1
         #開始インデックス更新
-        if (i+1)%19==0:
+        if (i+1)%17==0:
             low=low+1
             if col_flg==1:
                 col_flg=0
@@ -187,14 +186,14 @@ def makedir(filepath):
 
 def main():
     m=100    #連続画像枚数
-    n=3    #解析スタック数
+    n=1    #解析スタック数
     s=110    #2値化閾値（ピラー円と粒子の輝度値のみが0になる値に設定）
-    t=range(1,4,1) #画像撮影時間(min)
+    t=range(1,2,1) #画像撮影時間(min)
     e=np.zeros(n)  #充填率格納箱
     e_num=0
-    filepath="F:/experiment/2026_9_27_grid_particle"
+    filepath="C:/All_Files/data_tmp/2026_9_27_grid_particle/"
     makedir(filepath)
-    for k in range(1,4,1):
+    for k in range(1,2,1):
         img=tiff.imread(filepath+f"/cine{k}_crop.tif")
 
         # 画像サイズの取得
@@ -214,7 +213,7 @@ def main():
 
         #2値化後の画像をグレースケールで読み込み
         img_ave=cv2.imread(filepath+f"/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
-        img_filling=np.zeros((44,43))#判定結果の可視化1px=1充填
+        img_filling=np.zeros((24,17))#判定結果の可視化1px=1充填
 
         img_ave=circle_line(img_ave,circles,0)
 
@@ -242,7 +241,7 @@ def main():
         cv2.imwrite(filepath+f"/imgana/filing_factor/rect_mesh{k}.png", img_debug)
 
         row_filing=get_col_filling(img_filling)
-        x_point=range(43)
+        x_point = range(len(row_filing))
 
         save_dist(x_point,row_filing,k,filepath)
 
