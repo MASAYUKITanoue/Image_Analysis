@@ -137,13 +137,13 @@ def fill_judge(points,x,img_ave,img_filling,black,white, colPillarNum, img_debug
                 connected=is_connected_black_path(crop) #ピラー円間が輝度値0のpxでつながっているか判定、bool型で返す
                 if connected==True:  
                     img_filling[low,col]=150
-                    black+=41**2
+                    black+=1
                 else:
                     img_filling[low,col]=250
-                    white+=41**2
+                    white+=1
             else:
                 img_filling[low,col]=250
-                white+=41**2
+                white+=1
         col=col+1
         #開始インデックス更新
         if (i+1)%colPillarNum==0:
