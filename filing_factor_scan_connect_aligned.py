@@ -70,7 +70,7 @@ def two_value(img_ave,height,width,s):
                 img_ave[i,j]=255
     return img_ave
 
-def get_circlepx(circles, colPillarNum):
+def get_circlepx(circles):
     x = circles[0, :, 0]
     y = circles[0, :, 1]
     points = np.zeros((len(x), 2))
@@ -78,6 +78,9 @@ def get_circlepx(circles, colPillarNum):
     points[:, 1] = y
     #左上ピラーを0番として各行に番号付け
     points=points[np.argsort(points[:,1])]
+    y_base = points[0, 1]
+    colPillarNum = np.sum(np.abs(points[:, 1] - y_base) <= 10)
+    rowPillarNum = int(len(points) / colPillarNum)
     points_sort=np.zeros([len(points),2])
     j=0
     for i in range(int(len(points)/colPillarNum)):
@@ -85,7 +88,7 @@ def get_circlepx(circles, colPillarNum):
         points_tmp=points_tmp[np.argsort(points_tmp[:,0])]
         points_sort[j:j+colPillarNum]=points_tmp
         j=j+colPillarNum
-    return points_sort,x
+    return points_sort,x,rowPillarNum,colPillarNum
 
 def circle_line(img_ave,circles,cf):
     if circles is not None:
@@ -182,17 +185,15 @@ def makedir(filepath):
 def main():
     #パラメータ設定
     m=100    #連続画像枚数
-    n=1    #解析スタック数
+    n=3    #解析スタック数
     s=110    #2値化閾値（ピラー円と粒子の輝度値のみが0になる値に設定）
-    t=range(1,2,n) #画像撮影時間(min)
-    rowPillarNum=22
-    colPillarNum=19 #画像内のピラー総数を設定
-
+    t=range(1,n+1,1) #画像撮影時間(min)
+    nImage = range(1,n+1,1)
     e=np.zeros(n)  #充填率格納箱
     e_num=0
-    filepath="C:/All_Files/data_tmp/2026_9_27_grid_particle/"
+    filepath="F:/experiment/2026_9_27_grid_particle/"
     makedir(filepath)
-    for k in range(1,2,n):
+    for k in nImage:
         img=tiff.imread(filepath+f"/cine{k}_crop.tif")
 
         # 画像サイズの取得
@@ -212,7 +213,7 @@ def main():
 
         #2値化後の画像をグレースケールで読み込み
         img_ave=cv2.imread(filepath+f"/imgana/filing_factor/two_value{k}.tiff",cv2.IMREAD_GRAYSCALE)
-        img_filling=np.zeros((rowPillarNum,colPillarNum))#判定結果の可視化1px=1充填
+
 
         img_ave=circle_line(img_ave,circles,0)
 
@@ -222,21 +223,22 @@ def main():
 
         cv2.imwrite(filepath+f"/imgana/filing_factor/add_circle{k}.tiff", img_ave) #円周のみで十分か
 
-        points,x=get_circlepx(circles, colPillarNum)
-    
+        points,x,rowPillarNum,colPillarNum=get_circlepx(circles)
+
         #充填率算出のための格納箱
         black=0
         white=0
 
-        # ★ デバッグ用画像（矩形の外形線を描くキャンバス）
+        #デバッグ用画像（矩形の外形線を描くキャンバス）
         img_debug = cv2.cvtColor(img_ave.copy(), cv2.COLOR_GRAY2BGR)
 
+        img_filling=np.zeros((rowPillarNum,colPillarNum))#判定結果の可視化1px=1充填
         img_filling,black,white,img_debug=fill_judge(points,x,img_ave,img_filling,black,white,colPillarNum,img_debug)         
 
         #充填領域を黒く塗った画像の保存
         cv2.imwrite(filepath+f"/imgana/filing_factor/result{k}.png",img_filling)
 
-        # ★ 矩形のメッシュを描いた画像を保存
+        #矩形のメッシュを描いた画像を保存
         cv2.imwrite(filepath+f"/imgana/filing_factor/rect_mesh{k}.png", img_debug)
 
         row_filing=get_col_filling(img_filling)
